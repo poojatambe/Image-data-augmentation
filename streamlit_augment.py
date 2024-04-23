@@ -14,10 +14,12 @@ if upload:
     img = Image.open(upload)
     st.subheader("Data Augmentation libraries:")
     options = st.selectbox("Select library:", 
-                           options=['Tensorflow', 'Pytorch'])
+                           options=['None', 'Tensorflow', 'Pytorch'])
     # list tensorflow augmentations
-    tf_aug = ['Flip', 'Grayscale', 'Saturation', 'Brightness', 'Contrast', 'Hue',
-              'Gamma', 'Center crop', 'Rotate']
+    tf_aug = ['None', 'Flip', 'Grayscale', 'Saturation', 'Brightness', 'Contrast', 'Hue',
+              'Gamma', 'Center crop', 'Rotate', 'Random brightness',
+              'Random contrast', 'Random crop', 'Random hue', 'Random saturation',
+              'Random Flip']
     # list pytroch augmentations
     torch_aug = ['None', 'Resize', 'Scale jitter', 'Random resize1', 
                  'Random resize2', 'Center crop', 'Five Crop', 
@@ -427,7 +429,7 @@ if upload:
         # brightness
         elif aug == 'Brightness':
             delta = float(st.sidebar.number_input("Select delta (-1, 1): "))
-            if -1 <= delta <=1:
+            if -1 <= delta <= 1:
                 bright_out = tf.image.adjust_brightness(img, delta)
                 c1, c2 = st.columns(2)
                 c2.subheader('Augmentation Output: ')
@@ -447,4 +449,140 @@ if upload:
             c1.subheader("Input image:")
             c1.image(img)
             c1.write(img.size)
-
+        # hue
+        elif aug == "Hue":
+            delta = float(st.sidebar.number_input("Select delta (-1, 1): "))
+            if -1 <= delta <= 1:
+                hue_out = tf.image.adjust_hue(img, delta)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(hue_out.numpy())
+                c2.write(hue_out.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)
+        # Gamma
+        elif aug == "Gamma":
+            gamma = float(st.sidebar.number_input("Select gamma (0, inf): "))
+            if gamma > 0.0:
+                gamma_out = tf.image.adjust_gamma(img, gamma)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(gamma_out.numpy())
+                c2.write(gamma_out.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)
+            st.write("For gamma greater than 1, the histogram will shift towards \
+                     left and the output image will be darker than the input image.\
+                     For gamma less than 1, the histogram will shift towards right \
+                     and the output image will be brighter than the input image.")
+        # center crop
+        elif aug == "Center crop":
+            centeral_fraction = float(st.sidebar.slider("Select crop fraction (0, 1): ",
+                                                        0.0, 1.0, 0.5, 0.01))
+            if 1.0 > centeral_fraction >= 0.0:
+                center_crop = tf.image.central_crop(img, centeral_fraction)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(center_crop.numpy())
+                c2.write(center_crop.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)
+        # Rotate
+        elif aug == "Rotate":
+            rotate_opt = st.sidebar.radio("Select rotation:", 
+                                          options=['Clockwise', 'Counter-clockwise', 'Upside-down'])
+            if rotate_opt == 'Clockwise':
+                rotate_out = tf.image.rot90(img, k=1)
+            elif rotate_opt == 'Counter-clockwise':
+                rotate_out = tf.image.rot90(img, k=3)
+            elif rotate_opt == "Upside-down":
+                rotate_out = tf.image.rot90(img, k=2)
+            c1, c2 = st.columns(2)
+            c2.subheader('Augmentation Output: ')
+            c2.image(rotate_out.numpy())
+            c2.write(rotate_out.shape)
+            c1.subheader("Input image:")
+            c1.image(img)
+            c1.write(img.size) 
+        # random brightness
+        elif aug == 'Random brightness':
+            max_delta = float(st.sidebar.number_input("Select max delta (0, 1): "))
+            if 1.0 >= max_delta > 0.0:
+                random_bright = tf.image.random_brightness(img, max_delta)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(random_bright.numpy())
+                c2.write(random_bright.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)
+        # random contrast
+        elif aug == "Random contrast":
+            max_val = float(st.sidebar.number_input('Select max value:'))
+            min_val = float(st.sidebar.number_input('Select min value:'))
+            if max_val > min_val and max_val >= 0 and min_val >= 0:
+                random_contrast_out = tf.image.random_contrast(img, min_val, max_val)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(random_contrast_out.numpy())
+                c2.write(random_contrast_out.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)
+        # random crop 
+        elif aug == "Random crop":
+            h_c = int(st.sidebar.slider("Select height: ", 1, 
+                                        int(img.size[1]-1)))
+            w_c = int(st.sidebar.slider("Select width: ", 1, 
+                                        int(img.size[0]-1)))
+            random_crop_out = tf.image.random_crop(img, (h_c, w_c, 3))
+            c1, c2 = st.columns(2)
+            c2.subheader('Augmentation Output: ')
+            c2.image( random_crop_out.numpy())
+            c2.write( random_crop_out.shape)
+            c1.subheader("Input image:")
+            c1.image(img)
+            c1.write(img.size)    
+        # random flip
+        elif aug == "Random Flip":
+            flip_opt = st.sidebar.radio("Select flip: ",
+                                        options=['Horizontal', 'Vertical'])
+            if flip_opt == 'Horizontal':
+                random_flip_out = tf.image.random_flip_left_right(img)
+            else: 
+                random_flip_out = tf.image.random_flip_up_down(img)
+            c1, c2 = st.columns(2)
+            c2.subheader('Augmentation Output: ')
+            c2.image(random_flip_out.numpy())
+            c2.write(random_flip_out.shape)
+            c1.subheader("Input image:")
+            c1.image(img)
+            c1.write(img.size)
+        # random hue
+        elif aug == "Random hue":
+            max_delta = float(st.sidebar.number_input("Select max delta (0, 0.5): "))
+            if 0.5 >= max_delta > 0.0:
+                random_hue_out = tf.image.random_hue(img, max_delta)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(random_hue_out.numpy())
+                c2.write(random_hue_out.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)
+        # random saturation
+        elif aug == "Random saturation":
+            max_val = float(st.sidebar.number_input('Select max value:'))
+            min_val = float(st.sidebar.number_input('Select min value:'))
+            if max_val > min_val and max_val >= 0 and min_val >= 0:
+                random_sat_out = tf.image.random_saturation(img, min_val, max_val)
+                c1, c2 = st.columns(2)
+                c2.subheader('Augmentation Output: ')
+                c2.image(random_sat_out.numpy())
+                c2.write(random_sat_out.shape)
+                c1.subheader("Input image:")
+                c1.image(img)
+                c1.write(img.size)            
